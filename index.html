@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ing. - Zuñiga Ore Juan Piere Alanisis | Dashboard Académico</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome, Chart.js & SheetJS (Excel) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { background: white !important; color: black !important; border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 antialiased flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Principal Oscuro -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-xl no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Identificador Principal / Título Solicitado -->
+                <div class="flex items-center space-x-3">
+                    <div class="p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl text-white shadow-lg shadow-blue-500/20">
+                        <i class="fa-solid fa-user-graduate text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-base sm:text-lg text-white tracking-tight leading-none">
+                            Ing. - Zuñiga Ore Juan Piere Alanisis
+                        </h1>
+                        <p class="text-xs text-blue-400 font-medium mt-1 flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Dashboard de Rendimiento Académico & Estadística Estudiantil
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botones Cargar Excel / CSV & Demo & IA -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <button onclick="openApiKeyModal()" id="apiKeyBadgeBtn" class="inline-flex items-center px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition">
+                        <i class="fa-solid fa-key mr-1.5"></i> <span id="apiKeyBadgeText">Configurar API Key</span>
+                    </button>
+
+                    <button onclick="generateGlobalAiAnalysis()" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/20 border border-purple-400/30 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-amber-300"></i> Análisis General con IA
+                    </button>
+
+                    <button onclick="loadDemoData()" class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm border border-indigo-500/30">
+                        <i class="fa-solid fa-bolt mr-1.5 text-amber-300"></i> Datos Demo
+                    </button>
+                    
+                    <label class="cursor-pointer inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                        <i class="fa-solid fa-file-excel mr-1.5 text-emerald-400"></i> Importar Excel / CSV
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelUpload(event)">
+                    </label>
+
+                    <button onclick="window.print()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition" title="Imprimir o Guardar PDF">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Pestañas Interactivas -->
+        <div class="bg-slate-900/90 border-t border-slate-800/80 overflow-x-auto custom-scrollbar">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 py-1.5 text-xs font-medium">
+                <button onclick="switchTab('resumen')" id="tab-resumen" class="nav-tab px-4 py-2 rounded-lg transition flex items-center space-x-2 text-white bg-blue-600 font-bold">
+                    <i class="fa-solid fa-chart-pie"></i> <span>Resumen General</span>
+                </button>
+                <button onclick="switchTab('aprobados')" id="tab-aprobados" class="nav-tab px-4 py-2 rounded-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800">
+                    <i class="fa-solid fa-award"></i> <span>Aprobados y Desaprobados</span>
+                </button>
+                <button onclick="switchTab('asistencia')" id="tab-asistencia" class="nav-tab px-4 py-2 rounded-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800">
+                    <i class="fa-solid fa-user-check"></i> <span>Asistencia y Faltas</span>
+                </button>
+                <button onclick="switchTab('parentescos')" id="tab-parentescos" class="nav-tab px-4 py-2 rounded-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800">
+                    <i class="fa-solid fa-people-roof"></i> <span>Hermanos y Primos</span>
+                </button>
+                <button onclick="switchTab('tabla')" id="tab-tabla" class="nav-tab px-4 py-2 rounded-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800">
+                    <i class="fa-solid fa-table"></i> <span>Tabla General</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Buscador Inteligente y Filtros -->
+        <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between no-print">
+            <div class="relative w-full md:w-96">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-500 text-sm"></i>
+                <input type="text" id="globalSearch" oninput="handleSearchInput()" placeholder="🔍 Búsqueda rápida de alumno (ej: Ana, Vargas)..." class="w-full pl-10 pr-4 py-2 text-xs bg-slate-950 text-slate-100 border border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder-slate-500">
+                
+                <!-- Desplegable Autocompletado de Búsqueda Rápida -->
+                <div id="quickSearchResults" class="hidden absolute left-0 right-0 top-11 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar divide-y divide-slate-800"></div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <select id="courseFilter" onchange="filterData()" class="py-2 px-3 text-xs bg-slate-950 text-slate-200 border border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos los Cursos</option>
+                </select>
+
+                <select id="statusFilter" onchange="filterData()" class="py-2 px-3 text-xs bg-slate-950 text-slate-200 border border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos los Estados</option>
+                    <option value="Aprobado">Solo Aprobados (≥11)</option>
+                    <option value="Desaprobado">Solo Desaprobados (&lt;11)</option>
+                </select>
+
+                <button onclick="resetFilters()" class="p-2 text-slate-400 hover:text-white border border-slate-800 rounded-xl bg-slate-950 hover:bg-slate-800 transition" title="Limpiar Filtros">
+                    <i class="fa-solid fa-rotate-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 1: RESUMEN GENERAL (MAIN DASHBOARD) -->
+        <section id="sec-resumen" class="tab-content space-y-6">
+            <!-- Box para Informe de IA Global -->
+            <div id="globalAiReportBox" class="hidden bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/50 p-5 rounded-2xl border border-purple-500/30 shadow-2xl space-y-3">
+                <div class="flex items-center justify-between border-b border-purple-800/40 pb-3">
+                    <h3 class="font-bold text-sm text-purple-200 flex items-center gap-2">
+                        <i class="fa-solid fa-brain text-purple-400"></i> Informe de Diagnóstico Institucional con IA (Gemini)
+                    </h3>
+                    <button onclick="document.getElementById('globalAiReportBox').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div id="globalAiContent" class="text-xs text-slate-200 leading-relaxed whitespace-pre-line font-normal">
+                    Procesando reporte con IA...
+                </div>
+            </div>
+
+            <!-- Métricas KPI Principales -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl border-l-4 border-l-emerald-500 flex items-center justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Aprobados</p>
+                        <h3 class="text-2xl font-extrabold text-white mt-1" id="kpi-aprobados">0</h3>
+                        <p class="text-xs text-emerald-400 font-semibold mt-1" id="kpi-aprobados-pct">0% del total</p>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl border-l-4 border-l-rose-500 flex items-center justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Desaprobados</p>
+                        <h3 class="text-2xl font-extrabold text-white mt-1" id="kpi-desaprobados">0</h3>
+                        <p class="text-xs text-rose-400 font-semibold mt-1" id="kpi-desaprobados-pct">0% del total</p>
+                    </div>
+                    <div class="w-12 h-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl border-l-4 border-l-blue-500 flex items-center justify-between cursor-pointer hover:bg-slate-800/80 transition" onclick="openStudentByName(bestAttendanceStudent)">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mejor Asistencia</p>
+                        <h3 class="text-lg font-extrabold text-white mt-1 truncate max-w-[140px]" id="kpi-best-attendance-name">-</h3>
+                        <p class="text-xs text-blue-400 font-semibold mt-1" id="kpi-best-attendance-val">0% Asistencia</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl border-l-4 border-l-amber-500 flex items-center justify-between cursor-pointer hover:bg-slate-800/80 transition" onclick="openStudentByName(worstAttendanceStudent)">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mayor Inasistencia</p>
+                        <h3 class="text-lg font-extrabold text-white mt-1 truncate max-w-[140px]" id="kpi-worst-attendance-name">-</h3>
+                        <p class="text-xs text-amber-400 font-semibold mt-1" id="kpi-worst-attendance-val">0% Faltas</p>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos Estadísticos con Título DEBAJO -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Gráfico 1: Aprobados vs Desaprobados -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-xs uppercase tracking-wider flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-pie text-blue-500 mr-2"></i>Rendimiento Académico Global</span>
+                            <span class="text-slate-500 font-normal">Escala 0 - 20</span>
+                        </h3>
+                        <div class="h-64 mt-4 relative flex items-center justify-center">
+                            <canvas id="chartAprobados"></canvas>
+                        </div>
+                    </div>
+                    <p class="mt-4 py-2 px-3 bg-slate-950 text-center text-xs font-semibold text-slate-300 rounded-xl border border-slate-800/80">
+                        Figura 1: Proporción de Rendimiento Académico Global (Aprobados vs Desaprobados)
+                    </p>
+                </div>
+
+                <!-- Gráfico 2: Top Mejor Asistencia -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-xs uppercase tracking-wider">
+                            <i class="fa-solid fa-chart-bar text-emerald-400 mr-2"></i>Top 5 Estudiantes con Mayor Asistencia
+                        </h3>
+                        <div class="h-64 mt-4 relative">
+                            <canvas id="chartMejorAsistencia"></canvas>
+                        </div>
+                    </div>
+                    <p class="mt-4 py-2 px-3 bg-slate-950 text-center text-xs font-semibold text-slate-300 rounded-xl border border-slate-800/80">
+                        Figura 2: Ranking Top 5 Estudiantes con Mayor Porcentaje de Asistencia
+                    </p>
+                </div>
+
+                <!-- Gráfico 3: Top Mayores Faltas -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-xs uppercase tracking-wider">
+                            <i class="fa-solid fa-chart-line text-rose-400 mr-2"></i>Top 5 Estudiantes con Mayores Faltas
+                        </h3>
+                        <div class="h-64 mt-4 relative">
+                            <canvas id="chartMayoresFaltas"></canvas>
+                        </div>
+                    </div>
+                    <p class="mt-4 py-2 px-3 bg-slate-950 text-center text-xs font-semibold text-slate-300 rounded-xl border border-slate-800/80">
+                        Figura 3: Estudiantes con Mayor Porcentaje de Inasistencia
+                    </p>
+                </div>
+
+                <!-- Gráfico 4: Parentescos / Familias Detectadas -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-xs uppercase tracking-wider">
+                            <i class="fa-solid fa-people-roof text-indigo-400 mr-2"></i>Distribución de Parentescos (Hermanos / Primos)
+                        </h3>
+                        <div class="h-64 mt-4 relative">
+                            <canvas id="chartFamilias"></canvas>
+                        </div>
+                    </div>
+                    <p class="mt-4 py-2 px-3 bg-slate-950 text-center text-xs font-semibold text-slate-300 rounded-xl border border-slate-800/80">
+                        Figura 4: Distribución y Desempeño por Grupos Familiares Detectados
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 2: APROBADOS Y DESAPROBADOS -->
+        <section id="sec-aprobados" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Listado de Rendimiento Académico</h2>
+                        <p class="text-xs text-slate-400">Haz clic en cualquier tarjeta para desplegar el resumen académico extendido.</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-slate-800 rounded-lg text-slate-300 border border-slate-700" id="count-aprobados-tab">0 Alumnos</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="gridAprobados"></div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 3: ASISTENCIA Y FALTAS -->
+        <section id="sec-asistencia" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Ranking Asistencia -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                    <h3 class="font-bold text-emerald-400 text-xs uppercase tracking-wider mb-4 flex items-center">
+                        <i class="fa-solid fa-user-check mr-2"></i> Asistencia Sobresaliente
+                    </h3>
+                    <div class="divide-y divide-slate-800/80" id="listMejorAsistencia"></div>
+                </div>
+
+                <!-- Ranking Inasistencias -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                    <h3 class="font-bold text-rose-400 text-xs uppercase tracking-wider mb-4 flex items-center">
+                        <i class="fa-solid fa-user-xmark mr-2"></i> Registro de Inasistencias Críticas
+                    </h3>
+                    <div class="divide-y divide-slate-800/80" id="listMayoresFaltas"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 4: HERMANOS Y PRIMOS -->
+        <section id="sec-parentescos" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-xl">
+                <div class="mb-4">
+                    <h2 class="text-base font-bold text-white">Análisis Consanguíneo y Parentescos</h2>
+                    <p class="text-xs text-slate-400">Identificación automática de familias (hermanos y primos) mediante la coincidencia de apellidos paternos y maternos.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="gridParentescos"></div>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 5: TABLA GENERAL -->
+        <section id="sec-tabla" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+                <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+                    <h3 class="font-bold text-slate-200 text-xs uppercase tracking-wider">Base de Datos Completa</h3>
+                    <span class="text-xs font-semibold text-slate-400" id="table-record-count">0 registros</span>
+    <!-- MODAL CONFIGURACIÓN API KEY -->
+    <div id="apiKeyModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-400"></i> Clave API de Google Gemini
+                </h3>
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Ingresa tu <strong>Gemini API Key</strong> para habilitar diagnósticos con IA en vivo desde GitHub Pages. Se guardará de manera privada únicamente en el almacenamiento local de tu propio navegador (<code class="text-amber-300">localStorage</code>).
+            </p>
+            <div>
+                <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Tu API Key de Gemini</label>
+                <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full px-3 py-2 text-xs bg-slate-950 text-slate-100 border border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="clearSavedApiKey()" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg">Borrar Key</button>
+                <button onclick="saveApiKey()" class="px-4 py-1.5 text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg shadow-md">Guardar Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EXTENSO / DETALLE DEL ESTUDIANTE -->
+    <div id="studentModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-800 my-8 max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="bg-slate-950 p-6 relative border-b border-slate-800 flex items-start justify-between">
+                <div class="flex items-center space-x-4">
+                    <div id="modalAvatar" class="w-14 h-14 rounded-2xl bg-blue-600 border border-blue-400/30 flex items-center justify-center font-extrabold text-xl text-white shadow-lg">--</div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white" id="modalStudentName">Nombre del Estudiante</h3>
+                        <p class="text-xs text-slate-400 mt-0.5" id="modalStudentMeta">ID: - | Curso: -</p>
+                        <div class="mt-2 flex items-center space-x-2" id="modalBadges"></div>
+                    </div>
+                </div>
+                <button onclick="closeStudentModal()" class="text-slate-400 hover:text-white p-2 text-xl transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1 text-xs">
+                
+                <!-- Desglose de Notas -->
+                <div>
+                    <h4 class="font-bold text-[11px] uppercase tracking-wider text-slate-400 mb-3">Evaluaciones Académicas</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                            <p class="text-slate-500">Tareas</p>
+                            <p class="font-bold text-white text-base mt-1" id="mTarea">0.0</p>
+                        </div>
+                        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                            <p class="text-slate-500">Prácticas</p>
+                            <p class="font-bold text-white text-base mt-1" id="mPractica">0.0</p>
+                        </div>
+                        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                            <p class="text-slate-500">Ex. Parcial</p>
+                            <p class="font-bold text-white text-base mt-1" id="mParcial">0.0</p>
+                        </div>
+                        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                            <p class="text-slate-500">Proyecto</p>
+                            <p class="font-bold text-white text-base mt-1" id="mProyecto">0.0</p>
+                        </div>
+                        <div class="p-3 bg-blue-600/10 border border-blue-500/30 rounded-xl col-span-2 sm:col-span-1">
+                            <p class="text-blue-400 font-semibold">Nota Final</p>
+                            <p class="font-extrabold text-blue-400 text-lg mt-0.5" id="mFinal">0.0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Radar de Evaluaciones -->
+                <div>
+                    <h4 class="font-bold text-[11px] uppercase tracking-wider text-slate-400 mb-3">Balance de Capacidades</h4>
+                    <div class="h-44 bg-slate-950 p-2 rounded-xl border border-slate-800 relative flex items-center justify-center">
+                        <canvas id="chartStudentRadar"></canvas>
+                    </div>
+                </div>
+
+                <!-- Métricas de Asistencia -->
+                <div>
+                    <h4 class="font-bold text-[11px] uppercase tracking-wider text-slate-400 mb-3">Asistencia y Participación</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between font-semibold mb-1">
+                                <span class="text-slate-300">Porcentaje de Asistencia</span>
+                                <span id="mAsistenciaVal" class="text-blue-400">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                <div id="mAsistenciaBar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-semibold mb-1">
+                                <span class="text-slate-300">Participación en Clase</span>
+                                <span id="mParticipacionVal" class="text-indigo-400">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                <div id="mParticipacionBar" class="bg-indigo-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Familiar Identificado -->
+                <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-[11px] uppercase tracking-wider text-slate-300 mb-2 flex items-center">
+                        <i class="fa-solid fa-users text-blue-400 mr-2"></i>Familiares Coincidentes (Hermanos / Primos)
+                    </h4>
+                    <div id="mFamilyList" class="space-y-1.5 text-slate-400"></div>
+                </div>
+
+                <!-- Diagnóstico Académico -->
+                <div class="p-4 bg-blue-950/40 border border-blue-800/50 rounded-xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-[11px] uppercase tracking-wider text-blue-300 flex items-center">
+                            <i class="fa-solid fa-clipboard-check mr-2"></i>Diagnóstico del Docente / IA
+                        </h4>
+                        <button onclick="generateStudentAiDiagnostic()" id="btnStudentAi" class="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shadow-md">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Diagnóstico IA Gemini
+                        </button>
+                    </div>
+                    <p class="text-slate-300 leading-relaxed text-xs" id="mDiagnosis">
+                        Generando análisis personalizado...
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="bg-slate-950 px-6 py-3 border-t border-slate-800 flex justify-end">
+                <button onclick="closeStudentModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition">
+                    Cerrar Resumen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Lógica -->
+    <script>
+        // Dataset por defecto para demostración
+        const demoCSVData = `ID_Estudiante,Nombre_Estudiante,Curso,Seccion,Ciclo,Nota_Tarea,Nota_Practica,Nota_Parcial,Nota_Proyecto,Nota_Final,Asistencia_Porcentaje,Participacion_Porcentaje
+EST-001,Ana Torres,Programación I,A,II,16,15,14,17,15,92,88
+EST-002,Luis Mendoza,Programación I,A,II,14,13,12,15,13,85,76
+EST-003,Carla Rojas,Programación I,A,II,18,17,16,18,17,96,94
+EST-004,Diego Flores,Programación I,A,II,11,12,10,13,11,72,58
+EST-005,María Castillo,Programación I,A,II,15,16,14,16,15,89,82
+EST-006,Jorge Salazar,Programación I,A,II,13,12,11,14,12,78,65
+EST-007,Sofía Vargas,Programación I,A,II,17,18,17,19,18,98,96
+EST-008,Pedro Navarro,Programación I,A,II,10,11,9,12,10,68,52
+EST-009,Lucía Herrera,Programación I,A,II,16,15,15,17,16,91,87
+EST-010,Andrés Paredes,Programación I,A,II,12,14,11,13,12,81,63
+EST-011,Valeria Campos,Base de Datos,B,IV,17,16,15,18,16,94,91
+EST-012,Ricardo Peña,Base de Datos,B,IV,13,14,12,15,13,86,72
+EST-013,Elena Mendoza,Base de Datos,B,IV,18,17,18,19,18,97,95
+EST-014,Marco León,Base de Datos,B,IV,11,10,12,13,11,74,55
+EST-015,Gabriela Ruiz,Base de Datos,B,IV,15,15,14,16,15,90,84
+EST-016,Fernando Vega,Base de Datos,B,IV,14,13,13,14,14,87,78
+EST-017,Daniela Cruz,Base de Datos,B,IV,16,18,17,17,17,95,92
+EST-018,Miguel Soto,Base de Datos,B,IV,9,12,10,11,10,69,48
+EST-019,Patricia Núñez,Base de Datos,B,IV,15,16,15,17,16,93,86
+EST-020,Carlos Reyes,Base de Datos,B,IV,12,11,10,13,11,76,61
+EST-021,Rosa Medina,Ingeniería de Software,C,VI,16,17,15,18,16,91,89
+EST-022,Héctor Vargas,Ingeniería de Software,C,VI,14,15,13,15,14,88,75
+EST-023,Natalia Silva,Ingeniería de Software,C,VI,18,18,17,19,18,99,97
+EST-024,Óscar Fuentes,Ingeniería de Software,C,VI,10,11,9,12,10,65,49
+EST-025,Andrea Lozano,Ingeniería de Software,C,VI,15,14,15,16,15,90,81
+EST-026,Sergio Molina,Ingeniería de Software,C,VI,13,12,12,14,12,79,64
+EST-027,Claudia Espinoza,Ingeniería de Software,C,VI,17,16,18,18,17,96,93
+EST-028,Raúl Cabrera,Ingeniería de Software,C,VI,12,13,11,13,12,82,67
+EST-029,Mónica Valdez,Ingeniería de Software,C,VI,16,15,16,17,16,94,88
+EST-030,Iván Palomino,Ingeniería de Software,C,VI,11,10,12,11,11,71,54
+EST-031,Gabriela Torres,Inteligencia Artificial,D,VIII,18,17,18,19,18,98,96
+EST-032,Daniel Rivas,Inteligencia Artificial,D,VIII,15,16,14,17,15,92,83
+EST-033,Alejandra Ponce,Inteligencia Artificial,D,VIII,17,18,17,18,18,97,94
+EST-034,Bruno Castro,Inteligencia Artificial,D,VIII,10,12,11,12,11,73,57
+EST-035,Camila Ortiz,Inteligencia Artificial,D,VIII,16,15,16,17,16,95,90
+EST-036,Sebastián Arias,Inteligencia Artificial,D,VIII,13,14,12,14,13,84,70
+EST-037,Fernanda Vera,Inteligencia Artificial,D,VIII,18,16,17,19,17,96,93
+EST-038,Álvaro Medina,Inteligencia Artificial,D,VIII,9,10,11,12,10,67,46
+EST-039,Paola Benavides,Inteligencia Artificial,D,VIII,15,17,15,16,16,91,85
+EST-040,Esteban Ramos,Inteligencia Artificial,D,VIII,12,13,10,13,12,77,60
+EST-041,Juliana Salas,Computación Gráfica,E,VII,17,16,15,18,16,93,89
+EST-042,Manuel Cárdenas,Computación Gráfica,E,VII,14,13,12,15,13,86,73
+EST-043,Renata Villanueva,Computación Gráfica,E,VII,18,18,17,19,18,98,95
+EST-044,Cristian Aguilar,Computación Gráfica,E,VII,11,12,10,11,11,70,51
+EST-045,Beatriz Romero,Computación Gráfica,E,VII,16,15,14,17,15,90,84
+EST-046,Joaquín Méndez,Computación Gráfica,E,VII,13,14,13,14,13,83,68
+EST-047,Teresa Valdivia,Computación Gráfica,E,VII,17,17,16,18,17,96,91
+EST-048,Nicolás Zamora,Computación Gráfica,E,VII,10,11,9,12,10,66,45
+EST-049,Adriana Salinas,Computación Gráfica,E,VII,15,16,15,17,16,92,87
+EST-050,Roberto Chávez,Computación Gráfica,E,VII,12,12,11,13,12,79,62`;
+
+        let rawStudents = [];
+        let filteredStudents = [];
+        let charts = {};
+        let studentRadarChart = null;
+        let bestAttendanceStudent = null;
+        let worstAttendanceStudent = null;
+        let currentModalStudent = null;
+
+        // Gestión de API Key local
+        function getSavedApiKey() {
+            return localStorage.getItem('gemini_api_key_custom') || '';
+        }
+
+        function updateApiKeyBadge() {
+            const key = getSavedApiKey();
+            const badgeText = document.getElementById('apiKeyBadgeText');
+            if (key) {
+                badgeText.textContent = 'API Key Activa';
+                document.getElementById('apiKeyBadgeBtn').className = "inline-flex items-center px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 transition";
+            } else {
+                badgeText.textContent = 'Configurar API Key';
+                document.getElementById('apiKeyBadgeBtn').className = "inline-flex items-center px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition";
+            }
+        }
+
+        function openApiKeyModal() {
+            document.getElementById('apiKeyInput').value = getSavedApiKey();
+            document.getElementById('apiKeyModal').classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('apiKeyModal').classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const val = document.getElementById('apiKeyInput').value.trim();
+            if (val) {
+                localStorage.setItem('gemini_api_key_custom', val);
+            }
+            updateApiKeyBadge();
+            closeApiKeyModal();
+        }
+
+        function clearSavedApiKey() {
+            localStorage.removeItem('gemini_api_key_custom');
+            document.getElementById('apiKeyInput').value = '';
+            updateApiKeyBadge();
+            closeApiKeyModal();
+        }
+
+        // Llamada resiliente a la API de Gemini (con fallback inteligente si no hay Key o si da error 403)
+        async function callGeminiAPI(systemInstruction, userPrompt) {
+            const apiKey = getSavedApiKey();
+
+            if (!apiKey) {
+                // Fallback offline si no se ingresó clave API
+                return generateOfflineAiFallback(userPrompt);
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error("Clave API de Gemini rechazada o no válida (Error 403). Revisa la API Key configurada.");
+                }
+                throw new Error(`Error en el servicio de IA (${response.status})`);
+            }
+
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo generar el análisis automático.";
+        }
+
+        // Generador de Diagnóstico Offline Inteligente (Garantiza cero errores si no hay API Key)
+        function generateOfflineAiFallback(userPrompt) {
+            const total = filteredStudents.length;
+            const aprobados = filteredStudents.filter(s => s.status === 'Aprobado').length;
+            const desaprobados = total - aprobados;
+
+            if (userPrompt.includes('Analiza la siguiente estadística académica general')) {
+                return `📊 INFORME EJECUTIVO PREDICHO (Modo Offline / Asistente Local)
+1. DIAGNÓSTICO INSTITUCIONAL:
+   • Se evalúa a una muestra de ${total} estudiantes con una tasa de aprobación del ${((aprobados/total)*100).toFixed(1)}%.
+   • El promedio general de la clase demuestra una sólida asimilación de los contenidos curriculares.
+
+2. FACTORES DE RIESGO:
+   • Se identifican ${desaprobados} estudiantes en riesgo académico por calificaciones inferiores al umbral mínimo (11.0).
+   • Inasistencias críticas detectadas en el segmento inferior de asistencia (${worstAttendanceStudent ? worstAttendanceStudent.name : 'N/A'}).
+
+3. RECOMENDACIONES PEDAGÓGICAS:
+   • Implementar talleres de refuerzo continuo para los desaprobados antes de los exámenes finales.
+   • Configurar un sistema de alertas tempranas para alumnos con más del 20% de inasistencias.
+   *(Nota: Para respuestas en tiempo real con Gemini en vivo, configura tu API Key gratuita en el botón de la barra superior)*.`;
+            }
+
+            if (currentModalStudent) {
+                const s = currentModalStudent;
+                return `📌 DIAGNÓSTICO DEL ALUMNO (${s.name}):
+El estudiante ${s.name} presenta un desempeño de nivel ${s.status === 'Aprobado' ? 'Satisfactorio' : 'Crítico'} en el curso ${s.course}. Cuenta con un promedio de ${s.final.toFixed(1)} y un registro de asistencia del ${s.asistencia}%. 
+${s.status === 'Aprobado' ? 'Se sugiere asignarle retos adicionales para mantener su nivel de excelencia.' : 'Se recomienda programar tutoría personalizada urgente para recuperar notas en tareas y examen parcial.'}`;
+            }
+
+            return "Análisis generado mediante motor estadístico local.";
+        }
+
+        // Búsqueda Rápida de Alumnos (Quick Search with Dropdown)
+        function handleSearchInput() {
+            const query = document.getElementById('globalSearch').value.toLowerCase().trim();
+            const dropdown = document.getElementById('quickSearchResults');
+
+            filterData();
+
+            if (query.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const matches = rawStudents.filter(s => 
+                s.name.toLowerCase().includes(query) || 
+                s.course.toLowerCase().includes(query) ||
+                s.id.toLowerCase().includes(query)
+            );
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = '<div class="p-3 text-xs text-slate-500 text-center">No se encontraron estudiantes</div>';
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = matches.slice(0, 6).map(s => `
+                <div onclick="selectQuickSearchStudent('${s.id}')" class="p-2.5 hover:bg-slate-800 cursor-pointer transition flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-7 h-7 rounded-lg ${s.status === 'Aprobado' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'} font-bold flex items-center justify-center text-xs">
+                            ${s.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="font-bold text-xs text-slate-200">${s.name}</p>
+                            <p class="text-[10px] text-slate-400">${s.course} (${s.cycle})</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold ${s.status === 'Aprobado' ? 'text-emerald-400' : 'text-rose-400'}">
+                        Nota: ${s.final.toFixed(1)}
+                    </span>
+                </div>
+            `).join('');
+
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectQuickSearchStudent(studentId) {
+            document.getElementById('quickSearchResults').classList.add('hidden');
+            const student = rawStudents.find(s => s.id === studentId);
+            if (student) openStudentModal(student);
+        }
+
+        // Ocultar desplegable de búsqueda al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('quickSearchResults');
+            const searchInput = document.getElementById('globalSearch');
+            if (!dropdown.contains(e.target) && e.target !== searchInput) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Diagnóstico Global con IA
+        async function generateGlobalAiAnalysis() {
+            const reportBox = document.getElementById('globalAiReportBox');
+            const reportContent = document.getElementById('globalAiContent');
+            reportBox.classList.remove('hidden');
+            reportContent.innerHTML = '<span class="animate-pulse text-purple-300"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Analizando rendimiento académico global con IA Gemini...</span>';
+
+            const total = filteredStudents.length;
+            const aprobados = filteredStudents.filter(s => s.status === 'Aprobado').length;
+            const desaprobados = total - aprobados;
+            const avgFinal = total > 0 ? (filteredStudents.reduce((acc, s) => acc + s.final, 0) / total).toFixed(2) : 0;
+            const avgAsist = total > 0 ? (filteredStudents.reduce((acc, s) => acc + s.asistencia, 0) / total).toFixed(2) : 0;
+
+            const systemPrompt = "Actúas como un consultor pedagógico de nivel superior. Redacta un informe sintético, ejecutivo, estructurado en viñetas claras con acciones pedagógicas concretas.";
+            const userPrompt = `Analiza la siguiente estadística académica general de ${total} estudiantes:
+- Total Aprobados: ${aprobados} (${((aprobados/total)*100).toFixed(1)}%)
+- Total Desaprobados: ${desaprobados} (${((desaprobados/total)*100).toFixed(1)}%)
+- Promedio General de Notas: ${avgFinal} / 20
+- Promedio de Asistencia General: ${avgAsist}%
+- Estudiante con mayor inasistencia: ${worstAttendanceStudent ? worstAttendanceStudent.name + ' (' + worstAttendanceStudent.faltasPct + '% faltas)' : 'N/A'}
+
+Entrega 3 secciones breves:
+1. Diagnóstico del estado actual del aula/ciclo.
+2. Factores de riesgo académico identificados.
+3. Plan de acción pedagógico recomendado para el docente.`;
+
+            try {
+                const aiResponse = await callGeminiAPI(systemPrompt, userPrompt);
+                reportContent.textContent = aiResponse;
+            } catch (err) {
+                reportContent.innerHTML = `<span class="text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error al generar el informe: ${err.message}.</span>`;
+            }
+        }
+
+        // Diagnóstico Individual por Estudiante con IA
+        async function generateStudentAiDiagnostic() {
+            if (!currentModalStudent) return;
+
+            const s = currentModalStudent;
+            const diagnosisEl = document.getElementById('mDiagnosis');
+            const btnAi = document.getElementById('btnStudentAi');
+
+            btnAi.disabled = true;
+            btnAi.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+            diagnosisEl.innerHTML = '<span class="animate-pulse text-purple-300"><i class="fa-solid fa-brain mr-2"></i>Consultando a Gemini IA...</span>';
+
+            const systemPrompt = "Eres un tutor académico universitario experto en evaluación continua. Escribe un diagnóstico breve de 1 párrafo conciso y directo para la ficha del alumno.";
+            const userPrompt = `Genera un diagnóstico del estudiante ${s.name} (Curso: ${s.course}, Ciclo: ${s.cycle}):
+- Nota Tareas: ${s.tarea}
+- Nota Prácticas: ${s.practica}
+- Nota Ex. Parcial: ${s.parcial}
+- Nota Proyecto: ${s.proyecto}
+- Nota Final: ${s.final} (${s.status})
+- Porcentaje de Asistencia: ${s.asistencia}%
+- Porcentaje de Inasistencias: ${s.faltasPct}%
+
+Proporciona una conclusión sobre su desempeño y una sugerencia específica para su mejora continua o tutoría.`;
+
+            try {
+                const aiResponse = await callGeminiAPI(systemPrompt, userPrompt);
+                diagnosisEl.textContent = aiResponse;
+            } catch (err) {
+                diagnosisEl.innerHTML = `<span class="text-rose-400">Error en IA: ${err.message}.</span>`;
+            } finally {
+                btnAi.disabled = false;
+                btnAi.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Diagnóstico IA Gemini';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateApiKeyBadge();
+            loadDemoData();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'font-bold');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'font-bold');
+                activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-800');
+            }
+
+            document.querySelectorAll('.tab-content').forEach(sec => sec.classList.add('hidden'));
+            const activeSec = document.getElementById(`sec-${tabId}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+        }
+
+        function loadDemoData() {
+            parseCSVText(demoCSVData);
+        }
+
+        // Lectura de Excel y CSV mediante SheetJS
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                processExcelJson(jsonRows);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcelJson(jsonRows) {
+            if (!jsonRows || jsonRows.length === 0) return;
+
+            rawStudents = jsonRows.map((rowObj, i) => {
+                // Función auxiliar para buscar claves insensibles a mayúsculas o variaciones
+                const getVal = (keys) => {
+                    for (const k of Object.keys(rowObj)) {
+                        const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (keys.some(target => target.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanK)) {
+                            return rowObj[k];
+                        }
+                    }
+                    return null;
+                };
+
+                const name = getVal(['Nombre_Estudiante', 'Nombre', 'Estudiante', 'Alumno', 'Nombres']) || `Alumno ${i + 1}`;
+                const course = getVal(['Curso', 'Materia', 'Asignatura']) || 'General';
+                const final = parseFloat(getVal(['Nota_Final', 'Promedio', 'NotaFinal', 'Nota', 'PromedioFinal']) || 0);
+                const asistencia = parseFloat(getVal(['Asistencia_Porcentaje', 'Asistencia', 'PorcentajeAsistencia', 'PctAsistencia']) || 0);
+
+                const nameParts = name.toString().trim().split(' ');
+                const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0];
+
+                return {
+                    id: getVal(['ID_Estudiante', 'ID', 'Codigo']) || `EST-${(i + 1).toString().padStart(3, '0')}`,
+                    name: name,
+                    course: course,
+                    section: getVal(['Seccion', 'Sección', 'Grupo']) || 'A',
+                    cycle: getVal(['Ciclo', 'Semestre']) || 'I',
+                    tarea: parseFloat(getVal(['Nota_Tarea', 'Tarea', 'Tareas']) || final),
+                    practica: parseFloat(getVal(['Nota_Practica', 'Practica', 'Practicas']) || final),
+                    parcial: parseFloat(getVal(['Nota_Parcial', 'Parcial', 'ExamenParcial']) || final),
+                    proyecto: parseFloat(getVal(['Nota_Proyecto', 'Proyecto', 'Proyectos']) || final),
+                    final: final,
+                    asistencia: asistencia,
+                    participacion: parseFloat(getVal(['Participacion_Porcentaje', 'Participacion']) || asistencia),
+                    status: final >= 11 ? 'Aprobado' : 'Desaprobado',
+                    faltasPct: Math.max(0, 100 - asistencia),
+                    lastName: lastName
+                };
+            });
+
+            populateCourseFilter();
+            filterData();
+        }
+
+        function parseCSVText(csvText) {
+            const lines = csvText.trim().split(/\r\n|\n/);
+            if (lines.length < 2) return;
+
+            const delimiter = lines[0].includes(';') ? ';' : ',';
+            const headers = lines[0].split(delimiter).map(h => h.trim());
+
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const cols = lines[i].split(delimiter).map(c => c.trim());
+                const rowObj = {};
+                headers.forEach((h, idx) => { rowObj[h] = cols[idx] || ''; });
+                rows.push(rowObj);
+            }
+            processExcelJson(rows);
+        }
+
+        function populateCourseFilter() {
+            const courseSelect = document.getElementById('courseFilter');
+            courseSelect.innerHTML = '<option value="">Todos los Cursos</option>';
+            const courses = [...new Set(rawStudents.map(s => s.course))];
+            courses.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                courseSelect.appendChild(opt);
+            });
+        }
+
+        function filterData() {
+            const query = document.getElementById('globalSearch').value.toLowerCase();
+            const course = document.getElementById('courseFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            filteredStudents = rawStudents.filter(s => {
+                const matchesSearch = s.name.toLowerCase().includes(query) || s.course.toLowerCase().includes(query) || s.id.toLowerCase().includes(query);
+                const matchesCourse = course === '' || s.course === course;
+                const matchesStatus = status === '' || s.status === status;
+                return matchesSearch && matchesCourse && matchesStatus;
+            });
+
+            updateKPIs();
+            renderCharts();
+            renderAprobadosTab();
+            renderAsistenciaTab();
+            renderParentescosTab();
+            renderMainTable();
+        }
+
+        function resetFilters() {
+            document.getElementById('globalSearch').value = '';
+            document.getElementById('courseFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            filterData();
+        }
+
+        function updateKPIs() {
+            const total = filteredStudents.length;
+            const aprobados = filteredStudents.filter(s => s.status === 'Aprobado').length;
+            const desaprobados = total - aprobados;
+
+            document.getElementById('kpi-aprobados').textContent = aprobados;
+            document.getElementById('kpi-aprobados-pct').textContent = total > 0 ? `${((aprobados / total) * 100).toFixed(1)}% del total` : '0%';
+
+            document.getElementById('kpi-desaprobados').textContent = desaprobados;
+            document.getElementById('kpi-desaprobados-pct').textContent = total > 0 ? `${((desaprobados / total) * 100).toFixed(1)}% del total` : '0%';
+
+            if (filteredStudents.length > 0) {
+                const sortedByAsistencia = [...filteredStudents].sort((a, b) => b.asistencia - a.asistencia);
+                bestAttendanceStudent = sortedByAsistencia[0];
+                worstAttendanceStudent = sortedByAsistencia[sortedByAsistencia.length - 1];
+
+                document.getElementById('kpi-best-attendance-name').textContent = bestAttendanceStudent.name;
+                document.getElementById('kpi-best-attendance-val').textContent = `${bestAttendanceStudent.asistencia}% Asistencia`;
+
+                document.getElementById('kpi-worst-attendance-name').textContent = worstAttendanceStudent.name;
+                document.getElementById('kpi-worst-attendance-val').textContent = `${worstAttendanceStudent.faltasPct}% Inasistencia`;
+            }
+        }
+
+        function renderCharts() {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.borderColor = '#1e293b';
+
+            const total = filteredStudents.length;
+            const aprobados = filteredStudents.filter(s => s.status === 'Aprobado').length;
+            const desaprobados = total - aprobados;
+
+            // Chart 1: Doughnut (Aprobados vs Desaprobados)
+            if (charts.aprobados) charts.aprobados.destroy();
+            const ctx1 = document.getElementById('chartAprobados').getContext('2d');
+            charts.aprobados = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Aprobados (≥11)', 'Desaprobados (<11)'],
+                    datasets: [{
+                        data: [aprobados, desaprobados],
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderColor: '#0f172a',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }
+                }
+            });
+
+            // Chart 2: Top 5 Mejor Asistencia
+            const top5Asistencia = [...filteredStudents].sort((a, b) => b.asistencia - a.asistencia).slice(0, 5);
+            if (charts.mejorAsistencia) charts.mejorAsistencia.destroy();
+            const ctx2 = document.getElementById('chartMejorAsistencia').getContext('2d');
+            charts.mejorAsistencia = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: top5Asistencia.map(s => s.name),
+                    datasets: [{
+                        label: '% Asistencia',
+                        data: top5Asistencia.map(s => s.asistencia),
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { max: 100, min: 0 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Chart 3: Top 5 Mayores Faltas
+            const top5Faltas = [...filteredStudents].sort((a, b) => b.faltasPct - a.faltasPct).slice(0, 5);
+            if (charts.mayoresFaltas) charts.mayoresFaltas.destroy();
+            const ctx3 = document.getElementById('chartMayoresFaltas').getContext('2d');
+            charts.mayoresFaltas = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: top5Faltas.map(s => s.name),
+                    datasets: [{
+                        label: '% Inasistencias',
+                        data: top5Faltas.map(s => s.faltasPct),
+                        backgroundColor: '#f43f5e',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { max: 100, min: 0 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Chart 4: Familias/Parentescos
+            const familyGroups = {};
+            filteredStudents.forEach(s => {
+                if (!familyGroups[s.lastName]) familyGroups[s.lastName] = 0;
+                familyGroups[s.lastName]++;
+            });
+
+            const familyLabels = Object.keys(familyGroups).filter(k => familyGroups[k] > 1);
+            const familyCounts = familyLabels.map(k => familyGroups[k]);
+
+            if (charts.familias) charts.familias.destroy();
+            const ctx4 = document.getElementById('chartFamilias').getContext('2d');
+            charts.familias = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: familyLabels.length > 0 ? familyLabels.map(f => 'Fam. ' + f) : ['Sin Familias'],
+                    datasets: [{
+                        label: 'Integrantes',
+                        data: familyCounts.length > 0 ? familyCounts : [0],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderAprobadosTab() {
+            const container = document.getElementById('gridAprobados');
+            container.innerHTML = '';
+            document.getElementById('count-aprobados-tab').textContent = `${filteredStudents.length} Alumnos Muestra`;
+
+            filteredStudents.forEach(s => {
+                const isApproved = s.status === 'Aprobado';
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border transition cursor-pointer hover:scale-[1.01] bg-slate-900 ${isApproved ? 'border-slate-800 hover:border-emerald-500/50' : 'border-rose-900/40 bg-rose-950/10 hover:border-rose-500/50'}`;
+                card.onclick = () => openStudentModal(s);
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl ${isApproved ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'} font-extrabold flex items-center justify-center text-sm">
+                                ${s.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-100 text-xs truncate max-w-[150px]">${s.name}</h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5">${s.course} (${s.cycle})</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-0.5 text-xs font-bold rounded-md ${isApproved ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">
+                            ${s.final.toFixed(1)}
+                        </span>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                        <span>Asistencia: <strong class="text-slate-200">${s.asistencia}%</strong></span>
+                        <span class="text-blue-400 font-semibold hover:underline">Ver Perfil Extenso →</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderAsistenciaTab() {
+            const bestList = document.getElementById('listMejorAsistencia');
+            const worstList = document.getElementById('listMayoresFaltas');
+            bestList.innerHTML = '';
+            worstList.innerHTML = '';
+
+            const sortedAsistencia = [...filteredStudents].sort((a, b) => b.asistencia - a.asistencia);
+            const sortedFaltas = [...filteredStudents].sort((a, b) => b.faltasPct - a.faltasPct);
+
+            sortedAsistencia.slice(0, 10).forEach(s => {
+                const item = document.createElement('div');
+                item.className = "py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 px-2 rounded-lg transition";
+                item.onclick = () => openStudentModal(s);
+                item.innerHTML = `
+                    <div>
+                        <p class="font-bold text-slate-200 text-xs">${s.name}</p>
+                        <p class="text-[11px] text-slate-400">${s.course}</p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 font-bold rounded-lg border border-emerald-500/20 text-xs">
+                        ${s.asistencia}% Asist.
+                    </span>
+                `;
+                bestList.appendChild(item);
+            });
+
+            sortedFaltas.slice(0, 10).forEach(s => {
+                const item = document.createElement('div');
+                item.className = "py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 px-2 rounded-lg transition";
+                item.onclick = () => openStudentModal(s);
+                item.innerHTML = `
+                    <div>
+                        <p class="font-bold text-slate-200 text-xs">${s.name}</p>
+                        <p class="text-[11px] text-slate-400">${s.course}</p>
+                    </div>
+                    <span class="px-2.5 py-1 bg-rose-500/10 text-rose-400 font-bold rounded-lg border border-rose-500/20 text-xs">
+                        ${s.faltasPct}% Faltas
+                    </span>
+                `;
+                worstList.appendChild(item);
+            });
+        }
+
+        function renderParentescosTab() {
+            const container = document.getElementById('gridParentescos');
+            container.innerHTML = '';
+
+            const familyGroups = {};
+            rawStudents.forEach(s => {
+                if (!familyGroups[s.lastName]) familyGroups[s.lastName] = [];
+                familyGroups[s.lastName].push(s);
+            });
+
+            const families = Object.keys(familyGroups).filter(l => familyGroups[l].length > 1);
+
+            if (families.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 col-span-3">No se detectaron familias o hermanos en la muestra actual.</p>';
+                return;
+            }
+
+            families.forEach(lastName => {
+                const members = familyGroups[lastName];
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-xl space-y-3";
+
+                let membersHTML = members.map(m => `
+                    <div onclick="openStudentModalByName('${m.name}')" class="p-2.5 bg-slate-950 rounded-xl flex items-center justify-between cursor-pointer hover:bg-slate-800 transition border border-slate-800/80">
+                        <div>
+                            <p class="font-bold text-xs text-slate-200">${m.name}</p>
+                            <p class="text-[11px] text-slate-400">${m.course} - Ciclo ${m.cycle}</p>
+                        </div>
+                        <span class="text-xs font-semibold text-blue-400">Nota: ${m.final}</span>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h4 class="font-bold text-white text-xs uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-people-roof text-indigo-400 mr-2"></i>Familia ${lastName}
+                        </h4>
+                        <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-300 rounded-md text-xs font-bold border border-indigo-500/20">${members.length} Integrantes</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        ${membersHTML}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderMainTable() {
+            const tbody = document.getElementById('mainTableBody');
+            tbody.innerHTML = '';
+            document.getElementById('table-record-count').textContent = `${filteredStudents.length} registros`;
+
+            filteredStudents.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/50 cursor-pointer transition";
+                tr.onclick = () => openStudentModal(s);
+
+                const isApproved = s.status === 'Aprobado';
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-400">${s.id}</td>
+                    <td class="p-3 font-bold text-slate-200">${s.name}</td>
+                    <td class="p-3 text-slate-300">${s.course}</td>
+                    <td class="p-3 text-slate-400">${s.cycle}</td>
+                    <td class="p-3 text-slate-300">${s.tarea}</td>
+                    <td class="p-3 text-slate-300">${s.practica}</td>
+                    <td class="p-3 text-slate-300">${s.parcial}</td>
+                    <td class="p-3 text-slate-300">${s.proyecto}</td>
+                    <td class="p-3 font-bold ${isApproved ? 'text-emerald-400' : 'text-rose-400'}">${s.final.toFixed(1)}</td>
+                    <td class="p-3 text-slate-300">${s.asistencia}%</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-md ${isApproved ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                            ${s.status}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openStudentModal(s) {
+            if (!s) return;
+            currentModalStudent = s;
+
+            document.getElementById('modalAvatar').textContent = s.name.charAt(0);
+            document.getElementById('modalStudentName').textContent = s.name;
+            document.getElementById('modalStudentMeta').textContent = `ID: ${s.id} | Curso: ${s.course} | Sección: ${s.section} | Ciclo: ${s.cycle}`;
+
+            const isApproved = s.status === 'Aprobado';
+            document.getElementById('modalBadges').innerHTML = `
+                <span class="px-2.5 py-0.5 rounded-md text-xs font-bold ${isApproved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                    ${s.status} (${s.final.toFixed(1)})
+                </span>
+                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                    Asistencia: ${s.asistencia}%
+                </span>
+            `;
+
+            document.getElementById('mTarea').textContent = s.tarea;
+            document.getElementById('mPractica').textContent = s.practica;
+            document.getElementById('mParcial').textContent = s.parcial;
+            document.getElementById('mProyecto').textContent = s.proyecto;
+            document.getElementById('mFinal').textContent = s.final.toFixed(1);
+
+            document.getElementById('mAsistenciaVal').textContent = `${s.asistencia}%`;
+            document.getElementById('mAsistenciaBar').style.width = `${s.asistencia}%`;
+
+            document.getElementById('mParticipacionVal').textContent = `${s.participacion}%`;
+            document.getElementById('mParticipacionBar').style.width = `${s.participacion}%`;
+
+            // Gráfico Radar de Evaluaciones en Modo Oscuro
+            if (studentRadarChart) studentRadarChart.destroy();
+            const ctxRadar = document.getElementById('chartStudentRadar').getContext('2d');
+            studentRadarChart = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Tareas', 'Prácticas', 'Ex. Parcial', 'Proyecto'],
+                    datasets: [{
+                        label: 'Calificación (0-20)',
+                        data: [s.tarea, s.practica, s.parcial, s.proyecto],
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 20,
+                            ticks: { stepSize: 5, backdropColor: 'transparent', color: '#64748b' },
+                            grid: { color: '#1e293b' },
+                            angleLines: { color: '#334155' },
+                            pointLabels: { color: '#cbd5e1', font: { size: 10 } }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Familiares
+            const familyList = document.getElementById('mFamilyList');
+            const relatives = rawStudents.filter(r => r.lastName === s.lastName && r.id !== s.id);
+            if (relatives.length > 0) {
+                familyList.innerHTML = relatives.map(r => `
+                    <div class="flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <span><strong class="text-slate-200">${r.name}</strong> (${r.course} - Ciclo ${r.cycle})</span>
+                        <button onclick="openStudentModalByName('${r.name}')" class="text-blue-400 font-semibold hover:underline text-xs">
+                            Ver Perfil →
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                familyList.innerHTML = '<p class="text-slate-500 italic">No se identificaron hermanos ni primos registrados con el mismo apellido en esta muestra.</p>';
+            }
+
+            // Diagnóstico Académico
+            const diagnosis = document.getElementById('mDiagnosis');
+            if (s.final >= 16) {
+                diagnosis.textContent = `${s.name} demuestra un desempeño excelente con un promedio final de ${s.final}. Cumple óptimamente con un ${s.asistencia}% de asistencia presencial. Apto para programas de becas y tutorías.`;
+            } else if (s.final >= 11) {
+                diagnosis.textContent = `${s.name} se encuentra aprobado en la materia con promedio de ${s.final}. Se aconseja incentivar la participación continua para fortalecer la nota del examen parcial y tareas.`;
+            } else {
+                diagnosis.textContent = `ALERTA ACADÉMICA: ${s.name} presenta una condición desaprobada (${s.final}) y un índice de inasistencia acumulado del ${s.faltasPct}%. Se requiere intervención tutorial de carácter urgente.`;
+            }
+
+            document.getElementById('studentModal').classList.remove('hidden');
+        }
+
+        function openStudentByName(s) {
+            if (s) openStudentModal(s);
+        }
+
+        function openStudentModalByName(name) {
+            const student = rawStudents.find(s => s.name === name);
+            if (student) openStudentModal(student);
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
